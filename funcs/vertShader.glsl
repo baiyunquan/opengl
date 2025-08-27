@@ -10,5 +10,6 @@ out vec3 ourColor;
 void main()
 {
     gl_Position = vec4(aPos, 1.0);
-    ourColor = aColor; // 直接将顶点颜色数据传递出去
+//    ourColor = aColor; // 直接将顶点颜色数据传递出去
+    ourColor = aPos; // 将顶点位置数据传递出去
 }

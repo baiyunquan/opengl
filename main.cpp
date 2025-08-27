@@ -6,18 +6,23 @@
 #include <fstream>
 #include <sstream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "funcs/func.h"
+#include <shader.cpp>
 
 void testEBO();
 void init();
 void test();
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void testImage();
 void processInput(GLFWwindow* window);
 void initBuffer(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
 void initBufferColor(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
 void removeBuffer(unsigned int& VBO, unsigned int& VAO);
 
-unsigned int createShaderProgram(const char* vertFile, const char* fragFile);
+//unsigned int createShaderProgram(const char* vertFile, const char* fragFile);
 GLFWwindow* createWindow();
 std::string readShaderSource(const char* filePath);
 unsigned int loadShader(int type, std::string file);
@@ -30,8 +35,165 @@ const unsigned int SCR_HEIGHT = 600;
 
 int main()
 {
-	test();
+	//test();
+	//testEBO();
+	testImage();
 	return 0;
+}
+
+void testImage() {
+
+	// glfw: initialize and configure
+	// ------------------------------
+	init();
+
+	// glfw window creation
+	// --------------------
+	GLFWwindow* window = createWindow();
+
+
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	// 为当前绑定的纹理对象设置环绕、过滤方式
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// 加载并生成纹理
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+
+	glActiveTexture(GL_TEXTURE0); // 在绑定纹理之前先激活纹理单元
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	// build and compile our shader program
+	// ------------------------------------
+	// vertex shader
+	unsigned int vertexShader = loadShader(GL_VERTEX_SHADER, "shaders/texture/vertShader.glsl");
+
+	// fragment shader
+	unsigned int fragmentShader = loadShader(GL_FRAGMENT_SHADER, "shaders/texture/fragShader.glsl");
+
+	// check for shader compile errors
+	int success;
+	char infoLog[512];
+	// link shaders
+	unsigned int shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+	// check for linking errors
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+	}
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	// set up vertex data (and buffer(s)) and configure vertex attributes
+	// ------------------------------------------------------------------
+	float vertices[] = {
+		//     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
+			 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // 右上
+			 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // 右下
+			-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
+			-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
+	};
+
+	// indices for EBO
+	unsigned int indices[] = {
+		// 注意索引从0开始! 
+		// 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
+		// 这样可以由下标代表顶点组合成矩形
+
+		0, 1, 3, // 第一个三角形
+		1, 2, 3  // 第二个三角形
+	};
+
+	unsigned int VBO, VAO;
+	unsigned int EBO;
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// 3. 复制我们的索引数组到一个索引缓冲中，供OpenGL使用
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// 属性0(Position) 存入VAO
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// Charaistic 1(Color) 存入VAO
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	// Charaistic 2(Texture Coordinate) 存入VAO
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+	glBindVertexArray(0);
+
+
+	// uncomment this call to draw in wireframe polygons.
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	// render loop
+	// -----------
+	while (!glfwWindowShouldClose(window))
+	{
+		// input
+		// -----
+		processInput(window);
+
+		// render
+		// ------
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// draw our first triangle
+		glUseProgram(shaderProgram);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		// glBindVertexArray(0); // no need to unbind it every time 
+
+		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+		// -------------------------------------------------------------------------------
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	// optional: de-allocate all resources once they've outlived their purpose:
+	// ------------------------------------------------------------------------
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteProgram(shaderProgram);
+
+	// glfw: terminate, clearing all previously allocated GLFW resources.
+	// ------------------------------------------------------------------
+	glfwTerminate();
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
@@ -138,7 +300,8 @@ void test() {
 	GLFWwindow* window = createWindow();
 
 	// link shaders
-	unsigned int shaderProgram = createShaderProgram("funcs/vertShader.glsl","funcs/uniFragShader.glsl");
+//	unsigned int shaderProgram = createShaderProgram("funcs/vertShader.glsl","funcs/uniFragShader.glsl");
+	Shader shaderProgram("funcs/vertShader.glsl","funcs/uniFragShader.glsl");
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
 	// ------------------------------------------------------------------
@@ -183,12 +346,12 @@ void test() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// draw our first triangle
-		glUseProgram(shaderProgram);
+//		glUseProgram(shaderProgram);
 
 		float timeValue = glfwGetTime();
 		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-		int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-		glUseProgram(shaderProgram);
+		int vertexColorLocation = glGetUniformLocation(shaderProgram.ID, "ourColor");
+		shaderProgram.use();
 		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
 		// 绘制第一个三角形
@@ -211,7 +374,7 @@ void test() {
 	// ------------------------------------------------------------------------
 	removeBuffer(VBO_T1, VAO_T1);
 	removeBuffer(VBO_T2, VAO_T2);
-	glDeleteProgram(shaderProgram);
+	glDeleteProgram(shaderProgram.ID);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
@@ -271,31 +434,31 @@ void removeBuffer(unsigned int& VBO, unsigned int& VAO) {
 	glDeleteBuffers(1, &VBO);
 }
 
-unsigned int createShaderProgram(const char* vertFile, const char* fragFile) {
-	// build and compile our shader program
-	// ------------------------------------
-	// vertex shader
-	unsigned int vertexShader = loadShader(GL_VERTEX_SHADER, vertFile);
-	// fragment shader
-	unsigned int fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragFile);
-	// check for shader compile errors
-	int success;
-	char infoLog[512];
-	// link shaders
-	unsigned int shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	// check for linking errors
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-	}
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-	return shaderProgram;
-}
+//unsigned int createShaderProgram(const char* vertFile, const char* fragFile) {
+//	// build and compile our shader program
+//	// ------------------------------------
+//	// vertex shader
+//	unsigned int vertexShader = loadShader(GL_VERTEX_SHADER, vertFile);
+//	// fragment shader
+//	unsigned int fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragFile);
+//	// check for shader compile errors
+//	int success;
+//	char infoLog[512];
+//	// link shaders
+//	unsigned int shaderProgram = glCreateProgram();
+//	glAttachShader(shaderProgram, vertexShader);
+//	glAttachShader(shaderProgram, fragmentShader);
+//	glLinkProgram(shaderProgram);
+//	// check for linking errors
+//	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+//	if (!success) {
+//		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+//		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+//	}
+//	glDeleteShader(vertexShader);
+//	glDeleteShader(fragmentShader);
+//	return shaderProgram;
+//}
 
 void testEBO() {
 
@@ -348,8 +511,8 @@ void testEBO() {
 		// 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
 		// 这样可以由下标代表顶点组合成矩形
 
-		1, 2, 3, // 第一个三角形
-		1, 0, 2  // 第二个三角形
+		0, 1, 3, // 第一个三角形
+		1, 2, 3  // 第二个三角形
 	};
 
 	unsigned int VBO, VAO;
