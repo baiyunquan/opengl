@@ -7,20 +7,21 @@
 
 #include "funcs/func.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
-GLFWwindow* createWindow();
-std::string readShaderSource(const char* filePath);
-unsigned int loadShader(int type, std::string file);
+void testEBO();
 void init();
 void test();
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow* window);
 void initBuffer(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
 void initBufferColor(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
 void removeBuffer(unsigned int& VBO, unsigned int& VAO);
 
 unsigned int createShaderProgram(const char* vertFile, const char* fragFile);
+GLFWwindow* createWindow();
+std::string readShaderSource(const char* filePath);
+unsigned int loadShader(int type, std::string file);
 
-void testEBO();
+
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -128,7 +129,7 @@ void test() {
 	GLFWwindow* window = createWindow();
 
 	// link shaders
-	unsigned int shaderProgram = createShaderProgram("funcs/vertShader.glsl","funcs/fragShader.glsl");
+	unsigned int shaderProgram = createShaderProgram("funcs/vertShader.glsl","funcs/uniFragShader.glsl");
 
 	// set up vertex data (and buffer(s)) and configure vertex attributes
 	// ------------------------------------------------------------------
@@ -174,6 +175,13 @@ void test() {
 
 		// draw our first triangle
 		glUseProgram(shaderProgram);
+
+		float timeValue = glfwGetTime();
+		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+		int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+		glUseProgram(shaderProgram);
+		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
 		// 绘制第一个三角形
 		glBindVertexArray(VAO_T1);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
