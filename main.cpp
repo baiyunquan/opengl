@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 
 #include "funcs/func.h"
 
@@ -51,15 +52,23 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 std::string readShaderSource(const char* filePath) {
-	std::string content;
-	std::ifstream fileStream(filePath, std::ios::in);
-	std::string line = "";
-	while (!fileStream.eof()) {
-		std::getline(fileStream, line);
-		content.append(line + "\n");
+	std::string shaderCode;
+	std::ifstream shaderFile;
+	shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	try
+	{
+		shaderFile.open(filePath);
+		std::stringstream shaderStream{};
+		shaderStream << shaderFile.rdbuf();
+		shaderFile.close();
+		shaderCode = shaderStream.str();
 	}
-	fileStream.close();
-	return content;
+	catch (std::ifstream::failure& e)
+	{
+		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << filePath << std::endl;
+		shaderCode = "";
+	}
+	return shaderCode;
 }
 
 GLFWwindow* createWindow() {
