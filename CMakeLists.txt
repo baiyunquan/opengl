@@ -7,6 +7,12 @@ project(OpenGLTEST1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 把需要拷贝的资源路径，保持在 thridParty 里面
+file(GLOB ASSETS "./shaders")
+
+# 把 ASSETS 指代目录集合的内容都拷贝到可执行文件目录下
+file(COPY ${ASSETS} DESTINATION ${CMAKE_BINARY_DIR})
+
 # 定义库文件所在的根目录
 set(LIB_DIR ${CMAKE_SOURCE_DIR}/libs)
 
@@ -44,6 +50,7 @@ target_include_directories(main PRIVATE
     ${LIB_DIR}/glfw-3.4.bin.WIN64/include
     ${LIB_DIR}/glew-2.2.0/include
     ${LIB_DIR}/glad/include
+    ${LIB_DIR}/glm  # 添加GLM头文件路径
 )
 
 # 定义 GLEW_STATIC
