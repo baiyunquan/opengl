@@ -260,6 +260,10 @@ void testMove() {
 			std::cout << "FPS:" << frames << std::endl;
 			frames = 0;
 			lastSecond = currentFrame;
+
+			std::cout << "Front:" << cameraFront.x << " " << cameraFront.y << " " << cameraFront.z << std::endl;
+			std::cout << "Pos:" << cameraPos.x << " " << cameraPos.y << " " << cameraPos.z << std::endl;
+			std::cout << "Up:" << cameraUp.x << " " << cameraUp.y << " " << cameraUp.z << std::endl;
 		}
 
 		// render
@@ -1536,18 +1540,26 @@ void processInput(GLFWwindow* window)
 
 void processInput(GLFWwindow* window , glm::vec3& cameraPos ,glm::vec3& cameraFront ,glm::vec3& cameraUp , float& deltaTime)
 {
+	// banned to move on y axis
+
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
+	glm::vec3 noY{ cameraFront };
+	noY.y = 0.0f;
+
 	float cameraSpeed = 0.75f * deltaTime; // adjust accordingly
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPos += cameraSpeed * cameraFront;
+		cameraPos += cameraSpeed * noY;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * cameraFront;
+		cameraPos -= cameraSpeed * noY;
+
+	noY = glm::normalize(glm::cross(cameraFront, cameraUp));
+	noY.y = 0;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		cameraPos -= noY * cameraSpeed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		cameraPos += noY * cameraSpeed;
 }
 
 void processInput(GLFWwindow* window , float& opacity)
