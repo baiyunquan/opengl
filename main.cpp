@@ -20,6 +20,7 @@ void testEBO();
 void init();
 void test();
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void testGLM();
 void testMove();
 void testCamera();
@@ -29,7 +30,7 @@ void test3D();
 void testMAT();
 void testImage();
 void processInput(GLFWwindow* window);
-void processInput(GLFWwindow* window, glm::vec3& cameraPos, glm::vec3& cameraFront, glm::vec3& cameraUp);
+void processInput(GLFWwindow* window, glm::vec3& cameraPos, glm::vec3& cameraFront, glm::vec3& cameraUp, float& deltaTime);
 void processInput(GLFWwindow* window, float& opacity);
 void initBuffer(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
 void initBufferColor(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
@@ -37,12 +38,22 @@ void removeBuffer(unsigned int& VBO, unsigned int& VAO);
 
 //unsigned int createShaderProgram(const char* vertFile, const char* fragFile);
 GLFWwindow* createWindow();
+GLFWwindow* createWindowMouse();
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 std::string readShaderSource(const char* filePath);
 unsigned int loadShader(int type, std::string file);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+bool firstMouse = true;
+float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float pitch = 0.0f;
+float lastX = 800.0f / 2.0;
+float lastY = 600.0 / 2.0;
+float fov = 45.0f;
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 
 int main()
 {
@@ -66,7 +77,7 @@ void testMove() {
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = createWindow();
+	GLFWwindow* window = createWindowMouse();
 
 
 	// build and compile our shader program
@@ -225,15 +236,31 @@ void testMove() {
 	};
 
 	glEnable(GL_DEPTH_TEST);
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	float deltaTime = 0.0f; // 当前帧与上一帧的时间差
+	float lastFrame = 0.0f; // 上一帧的时间
+	float lastSecond = glfwGetTime();
+	int frames{};
 
 	while (!glfwWindowShouldClose(window))
 	{
 		// input
 		// -----
-		processInput(window , cameraPos , cameraFront , cameraUp);
+		frames++;
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+		processInput(window , cameraPos , cameraFront , cameraUp ,deltaTime);
+
+		if (currentFrame - lastSecond >= 1.0f) {
+			std::cout << "FPS:" << frames << std::endl;
+			frames = 0;
+			lastSecond = currentFrame;
+		}
 
 		// render
 		// ------
@@ -258,7 +285,7 @@ void testMove() {
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		glm::mat4 projection = glm::mat4(1.0f);
-		projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
 		// pass transformation matrices to the shader
@@ -299,7 +326,6 @@ void testMove() {
 	// ------------------------------------------------------------------
 	glfwTerminate();
 }
-
 
 void testCamera() {
 
@@ -1508,12 +1534,12 @@ void processInput(GLFWwindow* window)
 		glfwSetWindowShouldClose(window, true);
 }
 
-void processInput(GLFWwindow* window , glm::vec3& cameraPos ,glm::vec3& cameraFront ,glm::vec3& cameraUp)
+void processInput(GLFWwindow* window , glm::vec3& cameraPos ,glm::vec3& cameraFront ,glm::vec3& cameraUp , float& deltaTime)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
-	float cameraSpeed = 0.005f; // adjust accordingly
+	float cameraSpeed = 0.75f * deltaTime; // adjust accordingly
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		cameraPos += cameraSpeed * cameraFront;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -1547,6 +1573,39 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	// make sure the viewport matches the new window dimensions; note that width and 
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.05;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(front);
 }
 
 std::string readShaderSource(const char* filePath) {
@@ -1590,6 +1649,26 @@ GLFWwindow* createWindow() {
 		exit(-1);
 	}
 	return window;
+}
+
+GLFWwindow* createWindowMouse() {
+	// glfw window creation
+	// --------------------
+	GLFWwindow* window = createWindow();
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+	return window;
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	if (fov >= 1.0f && fov <= 45.0f)
+		fov -= yoffset;
+	if (fov <= 1.0f)
+		fov = 1.0f;
+	if (fov >= 45.0f)
+		fov = 45.0f;
 }
 
 unsigned int loadShader(int type, std::string file) {
