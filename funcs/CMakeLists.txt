@@ -9,4 +9,5 @@ add_library(funcs ${FUNCS_SRCS} "stb_image.h")
 target_include_directories(funcs PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/libs/glad/include
+    ${CMAKE_SOURCE_DIR}/libs/glm
 )

@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <glm/glm.hpp>
 
 class Shader
 {
@@ -90,6 +91,34 @@ public:
     {
         glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
     }
+    // 新增: 设置4分量向量
+    // ------------------------------------------------------------------------
+    void setVec4(const std::string& name, const glm::vec4& value) const
+    {
+        glUniform4f(glGetUniformLocation(ID, name.c_str()), value.x, value.y, value.z, value.w);
+    }
+    // ------------------------------------------------------------------------
+    void setVec4(const std::string& name, float x, float y, float z, float w) const
+    {
+        glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
+    }
+
+    // 新增: 设置4x4矩阵
+    // ------------------------------------------------------------------------
+    void setMat4(const std::string& name, const glm::mat4& mat) const
+    {
+        glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    }
+
+    void setTexture(const std::string& name, int unit) const
+    {
+        // 设置采样器uniform
+        glUniform1i(glGetUniformLocation(ID, name.c_str()), unit);
+    }
+
+    void quit() {
+        glDeleteProgram(ID);
+	}
 
 private:
     // utility function for checking shader compilation/linking errors.
