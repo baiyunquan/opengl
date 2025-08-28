@@ -15,8 +15,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 // 窗口设置常量
-const unsigned int SCR_WIDTH = 800;   // 窗口宽度
-const unsigned int SCR_HEIGHT = 600;  // 窗口高度
+const unsigned int SCR_Width = 800;   // 窗口宽度
+const unsigned int SCR_Height = 600;  // 窗口高度
 
 // 外部全局变量声明（鼠标与相机相关）
 extern bool firstMouse;               // 首次鼠标输入标记
