@@ -1,51 +1,8 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
+#include "main.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #include "funcs/func.h"
-#include <shader.cpp>
-
-void testEBO();
-void init();
-void test();
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void testGLM();
-void testMove();
-void testCamera();
-glm::mat4 lookAt(const glm::vec3& cameraPos, const glm::vec3& cameraTarget, const glm::vec3& up);
-void testBox();
-void test3D();
-void testMAT();
-void testImage();
-void processInput(GLFWwindow* window);
-void processInput(GLFWwindow* window, glm::vec3& cameraPos, glm::vec3& cameraFront, glm::vec3& cameraUp, float& deltaTime);
-void processInput(GLFWwindow* window, float& opacity);
-void initBuffer(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
-void initBufferColor(unsigned int& VBO, unsigned int& VAO, float vertices[], size_t arraySize);
-void removeBuffer(unsigned int& VBO, unsigned int& VAO);
-
-//unsigned int createShaderProgram(const char* vertFile, const char* fragFile);
-GLFWwindow* createWindow();
-GLFWwindow* createWindowMouse();
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-std::string readShaderSource(const char* filePath);
-unsigned int loadShader(int type, std::string file);
-
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
 
 bool firstMouse = true;
 float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
