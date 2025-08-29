@@ -4,6 +4,9 @@
 
 #include "funcs/func.h"
 
+// 将所有全局变量放入命名空间
+namespace OpenGLIntro {
+
 bool firstMouse = true;
 float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
@@ -1965,4 +1968,5 @@ void testEBO() {
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
 	glfwTerminate();
+}
 }

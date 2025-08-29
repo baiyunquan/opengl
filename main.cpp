@@ -34,6 +34,7 @@ float lastFrame = 0.0f;
 
 int main()
 {
+    OpenGLIntro::fov;
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
