@@ -76,7 +76,8 @@ int main()
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader ourShader("shaders/box/vertShader.glsl", "shaders/box/fragShader.glsl");
+    Shader ourShader("shaders/light/vertShader.glsl", "shaders/light/fragShader.glsl");
+    Shader lightShader("shaders/light/vertShader.glsl", "shaders/light/lightShader.glsl");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -136,6 +137,7 @@ int main()
         glm::vec3(1.5f,  0.2f, -1.5f),
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };
+
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -152,7 +154,21 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    unsigned int lightVAO;
+    glGenVertexArrays(1, &lightVAO);
+    glBindVertexArray(lightVAO);
+    // 只需要绑定VBO不用再次设置VBO的数据，因为箱子的VBO数据中已经包含了正确的立方体顶点数据
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // 设置灯立方体的顶点属性（对我们的灯来说仅仅只有位置数据）
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
+    // 在此之前不要忘记首先 use 对应的着色器程序（来设定uniform）
+    ourShader.use();
+    ourShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    ourShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+
+    /*
     // load and create a texture 
     // -------------------------
     unsigned int texture1, texture2;
@@ -209,7 +225,9 @@ int main()
     ourShader.use();
     ourShader.setInt("texture1", 0);
     ourShader.setInt("texture2", 1);
+    */
 
+    glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
     // render loop
     // -----------
@@ -231,10 +249,10 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // bind textures on corresponding texture units
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture1);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture2);
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D, texture1);
+        //glActiveTexture(GL_TEXTURE1);
+        //glBindTexture(GL_TEXTURE_2D, texture2);
 
         // activate shader
         ourShader.use();
@@ -246,6 +264,9 @@ int main()
         // camera/view transformation
         glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("view", view);
+
+        // 设置光源位置（传递给普通着色器）
+        ourShader.setVec3("lightPos", lightPos);
 
         // render boxes
         glBindVertexArray(VAO);
@@ -261,6 +282,21 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
+		lightShader.use();
+        lightShader.setMat4("projection", projection);
+        lightShader.setMat4("view", view);
+        lightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+
+        glm::mat4 lightModel = glm::mat4(1.0f);
+        lightModel = glm::translate(lightModel, lightPos);
+        lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+
+        lightShader.setMat4("model", lightModel);
+
+        // 绘制灯立方体对象
+        glBindVertexArray(lightVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -270,6 +306,7 @@ int main()
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &lightVAO);
     glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
