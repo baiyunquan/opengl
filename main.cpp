@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <shader.cpp>
+#include <algorithm> // 用于 std::max
 #define STB_IMAGE_IMPLEMENTATION
 #include "funcs/stb_image.h"
 //#include "opengl_intro.h"
@@ -18,6 +19,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 unsigned int loadTexture(char const* path);
 void processInput(GLFWwindow* window);
+
+void adjustLightProperty(float adjustment);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -32,8 +35,13 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
+float currentFrame{};
+
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+glm::vec3 lightAmbient = { 0.2f, 0.2f, 0.2f };
+glm::vec3 lightDiffuse = { 0.5f, 0.5f, 0.5f };
+glm::vec3 lightSpecular = { 1.0f, 1.0f, 1.0f };
 
 int main()
 {
@@ -58,6 +66,7 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -157,11 +166,13 @@ int main()
     // load textures (we now use a utility function to keep the code more organized)
     // -----------------------------------------------------------------------------
     unsigned int diffuseMap = loadTexture("container2.png");
+    unsigned int specularMap = loadTexture("container2_specular.png");
 
     // shader configuration
     // --------------------
     lightingShader.use();
     lightingShader.setInt("material.diffuse", 0);
+    lightingShader.setInt("material.specular", 1);
     
     // world space positions of our cubes
     glm::vec3 cubePositions[] = {
@@ -177,15 +188,25 @@ int main()
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
+    float lastSecond = static_cast<float>(glfwGetTime());
+    int count{};
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
         // per-frame time logic
         // --------------------
-        float currentFrame = static_cast<float>(glfwGetTime());
+        currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        count++;
+
+        if (currentFrame - lastSecond >= 1.0f) {
+            std::cout << "FPS:" << count << std::endl;
+            count = 0;
+            lastSecond = currentFrame;
+        }
 
         // input
         // -----
@@ -202,12 +223,12 @@ int main()
         lightingShader.setVec3("viewPos", camera.Position);
 
         // light properties
-        lightingShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        lightingShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-        lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        lightingShader.setVec3("light.ambient", lightAmbient);
+        lightingShader.setVec3("light.diffuse", lightDiffuse);
+        lightingShader.setVec3("light.specular", lightSpecular);
 
         // material properties
-        lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+//        lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
         lightingShader.setFloat("material.shininess", 64.0f);
 
         // view/projection transformations
@@ -220,14 +241,13 @@ int main()
         glm::mat4 model = glm::mat4(1.0f);
         lightingShader.setMat4("model", model);
 
-        lightingShader.setVec3("lightColor" , 0.5f, 0.5f, 0.5f);
 
         // bind diffuse map
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
-
-
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
         
         // 在渲染循环中，修改立方体渲染部分
         for (unsigned int i = 0; i < 10; i++)
@@ -258,6 +278,7 @@ int main()
         lightCubeShader.use();
         lightCubeShader.setMat4("projection", projection);
         lightCubeShader.setMat4("view", view);
+        lightCubeShader.setVec3("lightColor", 0.5f, 0.5f, 0.5f);
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos);
         model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
@@ -286,6 +307,10 @@ int main()
 
 }
 
+// 灯光控制
+float lightAdjustStep = 0.1f;
+int currentLightProperty = 0; // 0: ambient, 1: diffuse, 2: specular
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow* window)
@@ -301,6 +326,62 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    // 选择要调整的灯光属性
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        currentLightProperty = 0;
+        std::cout << "Selected: Ambient Light" << std::endl;
+    }
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+        currentLightProperty = 1;
+        std::cout << "Selected: Diffuse Light" << std::endl;
+    }
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+        currentLightProperty = 2;
+        std::cout << "Selected: Specular Light" << std::endl;
+    }
+
+    // 调整选定的灯光属性
+    if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS) { // 加号键
+        adjustLightProperty(lightAdjustStep);
+    }
+    if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS) { // 减号键
+        adjustLightProperty(-lightAdjustStep);
+    }
+
+    // 增加调整步长
+    if (glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS) {
+        lightAdjustStep = std::max(0.01f, lightAdjustStep - 0.01f);
+        std::cout << "Adjust step: " << lightAdjustStep << std::endl;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT_BRACKET) == GLFW_PRESS) {
+        lightAdjustStep += 0.01f;
+        std::cout << "Adjust step: " << lightAdjustStep << std::endl;
+    }
+}
+
+void adjustLightProperty(float adjustment)
+{
+    switch (currentLightProperty) {
+    case 0: // Ambient
+        lightAmbient += adjustment;
+        lightAmbient = glm::clamp(lightAmbient, 0.0f, 1.0f);
+        std::cout << "Ambient light: " << lightAmbient.r << ", "
+            << lightAmbient.g << ", " << lightAmbient.b << std::endl;
+        break;
+    case 1: // Diffuse
+        lightDiffuse += adjustment;
+        lightDiffuse = glm::clamp(lightDiffuse, 0.0f, 1.0f);
+        std::cout << "Diffuse light: " << lightDiffuse.r << ", "
+            << lightDiffuse.g << ", " << lightDiffuse.b << std::endl;
+        break;
+    case 2: // Specular
+        lightSpecular += adjustment;
+        lightSpecular = glm::clamp(lightSpecular, 0.0f, 1.0f);
+        std::cout << "Specular light: " << lightSpecular.r << ", "
+            << lightSpecular.g << ", " << lightSpecular.b << std::endl;
+        break;
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
