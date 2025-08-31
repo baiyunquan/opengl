@@ -90,8 +90,9 @@ int main()
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader lightingShader("shaders/light/vertShader.glsl", "shaders/light/fragShader.glsl");
+//    Shader lightingShader("shaders/light/vertShader.glsl", "shaders/light/fragShader.glsl");
 //    Shader lightingShader("shaders/light/vertShader.glsl", "shaders/parallelLight/fragShader.glsl");
+    Shader lightingShader("shaders/light/vertShader.glsl", "shaders/flashlight/fragShader.glsl");
     Shader lightCubeShader("shaders/light/defaultVertShader.glsl", "shaders/light/lightShader.glsl");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -237,6 +238,12 @@ int main()
         lightingShader.setFloat("light.constant", 1.0f);
         lightingShader.setFloat("light.linear", 0.09f);
         lightingShader.setFloat("light.quadratic", 0.032f);
+
+        // flashlight(selective)
+        lightingShader.setVec3("light.position", camera.Position);
+        lightingShader.setVec3("light.direction", camera.Front);
+        lightingShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+        lightingShader.setFloat("outerCutOff", glm::cos(glm::radians(17.5f)));
 
         // material properties
 //        lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
