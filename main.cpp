@@ -305,6 +305,10 @@ int main()
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             lightingShader.setMat4("model", model);
 
+            // 计算法线矩阵 (模型矩阵的逆矩阵的转置的3x3部分)
+            glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
+            lightingShader.setMat3("normalMatrix", normalMatrix);
+
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
