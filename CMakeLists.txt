@@ -65,6 +65,6 @@ target_link_libraries(main PRIVATE
     funcs
     ${LIB_DIR}/glfw-3.4.bin.WIN64/lib-vc2022/glfw3.lib
     ${LIB_DIR}/glew-2.2.0/lib/Release/x64/glew32s.lib
-    ${LIB_DIR}/assimp/assimp/lib/assimp-vc143-mtd.lib
+    ${LIB_DIR}/assimp/lib/assimp-vc143-mtd.lib
     opengl32.lib
 )
