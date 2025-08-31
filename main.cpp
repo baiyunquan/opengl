@@ -40,10 +40,10 @@ float currentFrame{};
 
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-glm::vec3 lightAmbient = { 0.2f, 0.2f, 0.2f };
-glm::vec3 lightDiffuse = { 0.5f, 0.5f, 0.5f };
-glm::vec3 lightSpecular = { 1.0f, 1.0f, 1.0f };
-
+// 将原来的值改为更高的值
+glm::vec3 lightAmbient = { 0.5f, 0.5f, 0.5f };  // 从0.2增加到0.5
+glm::vec3 lightDiffuse = { 0.8f, 0.8f, 0.8f };  // 从0.5增加到0.8
+glm::vec3 lightSpecular = { 1.0f, 1.0f, 1.0f }; // 保持不变（已经是最大值）
 int main()
 {
     //lightMaterial();
@@ -91,6 +91,7 @@ int main()
     // build and compile our shader zprogram
     // ------------------------------------
     Shader lightingShader("shaders/light/vertShader.glsl", "shaders/light/fragShader.glsl");
+//    Shader lightingShader("shaders/light/vertShader.glsl", "shaders/parallelLight/fragShader.glsl");
     Shader lightCubeShader("shaders/light/defaultVertShader.glsl", "shaders/light/lightShader.glsl");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -224,10 +225,18 @@ int main()
         lightingShader.setVec3("light.position", lightPos);
         lightingShader.setVec3("viewPos", camera.Position);
 
+        // parallel light version
+//        lightingShader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+
         // light properties
         lightingShader.setVec3("light.ambient", lightAmbient);
         lightingShader.setVec3("light.diffuse", lightDiffuse);
         lightingShader.setVec3("light.specular", lightSpecular);
+
+        // attenuation
+        lightingShader.setFloat("light.constant", 1.0f);
+        lightingShader.setFloat("light.linear", 0.09f);
+        lightingShader.setFloat("light.quadratic", 0.032f);
 
         // material properties
 //        lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
@@ -273,8 +282,6 @@ int main()
             glBindVertexArray(cubeVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-
-
 
         // also draw the lamp object
         lightCubeShader.use();
