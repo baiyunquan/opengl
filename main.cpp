@@ -453,10 +453,8 @@ int flashLight()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // load textures (we now use a utility function to keep the code more organized)
-    // -----------------------------------------------------------------------------
-    unsigned int diffuseMap = loadTexture("container2.png");
-    unsigned int specularMap = loadTexture("container2_specular.png");
+    // 加载模型
+    Model ourModel("resources/backpack/backpack.obj"); // 确保路径正确
 
     // shader configuration
     // --------------------
@@ -544,14 +542,6 @@ int flashLight()
         // world transformation
         glm::mat4 model = glm::mat4(1.0f);
         lightingShader.setMat4("model", model);
-
-
-        // bind diffuse map
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuseMap);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specularMap);
         
         // 在渲染循环中，修改立方体渲染部分
         for (unsigned int i = 0; i < 10; i++)
@@ -567,13 +557,7 @@ int flashLight()
             glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
             lightingShader.setMat3("normalMatrix", normalMatrix);
 
-            // bind diffuse map
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, diffuseMap);
-
-            // render the cube
-            glBindVertexArray(cubeVAO);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            ourModel.Draw(lightingShader);
         }
 
         // also draw the lamp object
