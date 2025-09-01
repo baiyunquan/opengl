@@ -8,6 +8,9 @@ add_library(funcs ${FUNCS_SRCS} "stb_image.h" "camera.h" )
 # 添加必要的包含目录
 target_include_directories(funcs PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/libs/glad/include
-    ${CMAKE_SOURCE_DIR}/libs/glm
+    ${LIB_DIR}/glfw-3.4.bin.WIN64/include
+    ${LIB_DIR}/glew-2.2.0/include
+    ${LIB_DIR}/glad/include
+    ${LIB_DIR}/glm  # 添加GLM头文件路径
+    ${LIB_DIR}/assimp/include
 )

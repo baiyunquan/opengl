@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <shader.cpp>
+#include "funcs/model.cpp"
 #include <algorithm> // 用于 std::max
 #define STB_IMAGE_IMPLEMENTATION
 #include "funcs/stb_image.h"
@@ -42,7 +43,7 @@ float currentFrame{};
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 // 将原来的值改为更高的值
-glm::vec3 lightAmbient = { 0.5f, 0.5f, 0.5f };  // 从0.2增加到0.5
+glm::vec3 lightAmbient = { 1.0f, 1.0f, 1.0f };  // 从0.2增加到0.5
 glm::vec3 lightDiffuse = { 0.8f, 0.8f, 0.8f };  // 从0.5增加到0.8
 glm::vec3 lightSpecular = { 1.0f, 1.0f, 1.0f }; // 保持不变（已经是最大值）
 
@@ -161,20 +162,8 @@ int main()
         glm::vec3(0.0f,  0.0f, -3.0f)
     };
     // first, configure the cube's VAO (and VBO)
-    unsigned int VBO, cubeVAO;
-    glGenVertexArrays(1, &cubeVAO);
+    unsigned int VBO;
     glGenBuffers(1, &VBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindVertexArray(cubeVAO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
 
     // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
     unsigned int lightCubeVAO;
@@ -182,14 +171,15 @@ int main()
     glBindVertexArray(lightCubeVAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     // note that we update the lamp's position attribute's stride to reflect the updated buffer data
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // load textures (we now use a utility function to keep the code more organized)
-    // -----------------------------------------------------------------------------
-    unsigned int diffuseMap = loadTexture("container2.png");
-    unsigned int specularMap = loadTexture("container2_specular.png");
+    // load models
+    // -----------
+    Model ourModel("resources/backpack/backpack.obj");
+
 
     // shader configuration
     // --------------------
@@ -287,15 +277,7 @@ int main()
         glm::mat4 model = glm::mat4(1.0f);
         lightingShader.setMat4("model", model);
 
-        // bind diffuse map
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuseMap);
-        // bind specular map
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specularMap);
 
-        // render containers
-        glBindVertexArray(cubeVAO);
         for (unsigned int i = 0; i < 10; i++)
         {
             // calculate the model matrix for each object and pass it to shader before drawing
@@ -309,7 +291,7 @@ int main()
             glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
             lightingShader.setMat3("normalMatrix", normalMatrix);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            ourModel.Draw(lightingShader);
         }
 
         // also draw the lamp object(s)
@@ -338,7 +320,6 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &cubeVAO);
     glDeleteVertexArrays(1, &lightCubeVAO);
     glDeleteBuffers(1, &VBO);
 
