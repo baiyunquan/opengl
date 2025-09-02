@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <shader.cpp>
+#include "funcs/shader_m.cpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "funcs/stb_image.h"
 //#include "opengl_intro.h"

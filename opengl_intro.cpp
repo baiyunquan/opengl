@@ -1,7 +1,6 @@
 #include "opengl_intro.h"
 //#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
 #include "funcs/func.h"
 
 // 将所有全局变量放入命名空间

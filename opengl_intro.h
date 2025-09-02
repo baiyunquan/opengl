@@ -9,7 +9,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include "shader.cpp"
+#include "funcs/shader_m.cpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

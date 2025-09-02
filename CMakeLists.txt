@@ -24,7 +24,7 @@ file(GLOB SRCS "*.cpp")
 message(STATUS "Source files: ${SRCS}")
 
 # 生成可执行文件
-add_executable(main ${SRCS})
+add_executable(main game ${SRCS})
 
 # 获取 funcs 目录下所有 glsl 文件
 file(GLOB SHADER_FILES "${CMAKE_SOURCE_DIR}/funcs/*.glsl")
