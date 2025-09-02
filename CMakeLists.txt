@@ -51,6 +51,8 @@ target_include_directories(main PRIVATE
     ${LIB_DIR}/glew-2.2.0/include
     ${LIB_DIR}/glad/include
     ${LIB_DIR}/glm  # 添加GLM头文件路径
+    ${LIB_DIR}/assimp/include
+    ${LIB_DIR}/freetype/include
 )
 
 # 定义 GLEW_STATIC
@@ -64,5 +66,7 @@ target_link_libraries(main PRIVATE
     funcs
     ${LIB_DIR}/glfw-3.4.bin.WIN64/lib-vc2022/glfw3.lib
     ${LIB_DIR}/glew-2.2.0/lib/Release/x64/glew32s.lib
+    ${LIB_DIR}/assimp/lib/assimp-vc143-mtd.lib
+    ${LIB_DIR}/freetype/bin/freetype.lib
     opengl32.lib
 )
