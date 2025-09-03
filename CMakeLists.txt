@@ -12,12 +12,6 @@ if(MSVC)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-# 把需要拷贝的资源路径，保持在 thridParty 里面
-file(GLOB ASSETS "./shaders")
-
-# 把 ASSETS 指代目录集合的内容都拷贝到可执行文件目录下
-file(COPY ${ASSETS} DESTINATION ${CMAKE_BINARY_DIR})
-
 # 定义库文件所在的根目录
 set(LIB_DIR ${CMAKE_SOURCE_DIR}/libs)
 
@@ -30,25 +24,6 @@ message(STATUS "Source files: ${SRCS}")
 
 # 生成可执行文件
 add_executable(main ${SRCS})
-
-# 获取 funcs 目录下所有 glsl 文件
-file(GLOB SHADER_FILES "${CMAKE_SOURCE_DIR}/funcs/*.glsl")
-
-# 目标输出目录
-set(SHADER_OUTPUT_DIR "${CMAKE_BINARY_DIR}/funcs")
-
-# 创建自定义目标用于复制着色器文件
-add_custom_target(copy_shaders ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUTPUT_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${SHADER_FILES}
-        "${SHADER_OUTPUT_DIR}"
-    COMMENT "Copying shader files to output directory"
-    VERBATIM
-)
-
-# 保证在构建 main 前复制着色器
-add_dependencies(main copy_shaders)
 
 # 使用现代 CMake 方式添加包含目录
 target_include_directories(main PRIVATE
@@ -71,4 +46,19 @@ target_link_libraries(main PRIVATE
     ${LIB_DIR}/assimp/lib/assimp-vc143-mtd.lib
     ${LIB_DIR}/freetype/bin/freetype.lib
     opengl32.lib
+)
+
+# 拷贝资源文件到运行目录
+add_custom_command(TARGET main POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/resources
+    ${CMAKE_BINARY_DIR}/resources
+    COMMENT "Copying resources to build directory"
+)
+
+add_custom_command(TARGET main POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/shaders
+    ${CMAKE_BINARY_DIR}/shaders
+    COMMENT "Copying shaders to build directory"
 )
