@@ -7,7 +7,6 @@
 ** option) any later version.
 ******************************************************************/
 #include "game.h"
-#include "funcs/resource_manager.h"
 
 
 // Game-related State data

@@ -14,7 +14,7 @@
 #include <vector>
 #include <tuple>
 #include <glm/glm.hpp>
-
+#include "funcs/resource_manager.h"
 #include "sprite.h"
 
 // Represents the current state of the game
