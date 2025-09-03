@@ -11,19 +11,16 @@
 #include <iostream>
 
 #include "game.h"
-#include "funcs/resource_manager.h"
+#include "resource_manager.h"
 #include "sprite.h"
 
 
 // Game-related State data
-SpriteRenderer* Renderer;
+SpriteRenderer    *Renderer;
 
-
-Game::Game(GLuint width, GLuint height)
-    : State(GAME_ACTIVE), Keys(), Width(width), Height(height)
-{
-
-}
+Game::Game(unsigned int width, unsigned int height) 
+    : State(GAME_MENU), Keys(), Width(width), Height(height)
+{}
 
 Game::~Game()
 {
@@ -42,7 +39,6 @@ void Game::Init()
     ResourceManager::LoadTexture("resources/awesomeface.png", GL_TRUE, "face");
     // Set render-specific controls
     Renderer = new SpriteRenderer(ResourceManager::GetShader("sprite"));
-    
 }
 
 void Game::Update(GLfloat dt)
