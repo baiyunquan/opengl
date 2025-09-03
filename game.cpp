@@ -7,44 +7,51 @@
 ** option) any later version.
 ******************************************************************/
 #include "game.h"
+#include "funcs/resource_manager.h"
 
-// 构造函数
+
+// Game-related State data
+SpriteRenderer* Renderer;
+
+
 Game::Game(GLuint width, GLuint height)
-    : State(GAME_ACTIVE), Width(width), Height(height)
+    : State(GAME_ACTIVE), Keys(), Width(width), Height(height)
 {
-    // 初始化按键状态数组
-    for (GLboolean& key : Keys) {
-        key = GL_FALSE;
-    }
+
 }
 
-// 析构函数
 Game::~Game()
 {
-    // 清理资源（如果有）
+    delete Renderer;
 }
 
-// 初始化游戏
 void Game::Init()
 {
-    // 这里实现游戏初始化逻辑
-    // 例如：加载着色器、纹理、关卡等
+    // Load shaders
+    ResourceManager::LoadShader("shaders/sprite/vertShader.glsl", "shaders/sprite/fragShader.glsl", nullptr, "sprite");
+    // Configure shaders
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<GLfloat>(this->Width), static_cast<GLfloat>(this->Height), 0.0f, -1.0f, 1.0f);
+    ResourceManager::GetShader("sprite").Use().SetInteger("image", 0);
+    ResourceManager::GetShader("sprite").SetMatrix4("projection", projection);
+    // Load textures
+    ResourceManager::LoadTexture("resources/awesomeface.png", GL_TRUE, "face");
+    // Set render-specific controls
+    Renderer = new SpriteRenderer(ResourceManager::GetShader("sprite"));
+    
 }
 
-// 处理输入
-void Game::ProcessInput(GLfloat dt)
-{
-    // 这里实现输入处理逻辑
-}
-
-// 更新游戏状态
 void Game::Update(GLfloat dt)
 {
-    // 这里实现游戏状态更新逻辑
+
 }
 
-// 渲染游戏
+
+void Game::ProcessInput(GLfloat dt)
+{
+
+}
+
 void Game::Render()
 {
-    // 这里实现游戏渲染逻辑
+    Renderer->DrawSprite(ResourceManager::GetTexture("face"), glm::vec2(200, 200), glm::vec2(300, 400), 45.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 }

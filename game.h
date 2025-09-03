@@ -15,6 +15,8 @@
 #include <tuple>
 #include <glm/glm.hpp>
 
+#include "sprite.h"
+
 // Represents the current state of the game
 enum GameState {
     GAME_ACTIVE,
@@ -28,6 +30,8 @@ public:
     GameState  State;
     GLboolean  Keys[1024];
     GLuint     Width, Height;
+    SpriteRenderer* Renderer;
+
     // 构造函数/析构函数
     Game(GLuint width, GLuint height);
     ~Game();
