@@ -1,10 +1,9 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-#include <shader.h>
-#include <texture.h>
-#include <resource_manager.h>
+#include "funcs/texture.h"
+#include "funcs/shader.h"
 
 class SpriteRenderer
 {

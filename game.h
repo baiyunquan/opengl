@@ -9,13 +9,11 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <vector>
 #include <tuple>
-#include <glm/glm.hpp>
-#include "funcs/resource_manager.h"
-#include "sprite.h"
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 // Represents the current state of the game
 enum GameState {
@@ -30,7 +28,6 @@ public:
     GameState  State;
     GLboolean  Keys[1024];
     GLuint     Width, Height;
-    SpriteRenderer* Renderer;
 
     // 构造函数/析构函数
     Game(GLuint width, GLuint height);

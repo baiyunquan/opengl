@@ -8,7 +8,13 @@
 ******************************************************************/
 #define GLEW_STATIC
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include "game.h"
+#include "funcs/resource_manager.h"
+
+#include <iostream>
 
 // GLFW function declerations
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -131,18 +137,25 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+    glfwWindowHint(GLFW_RESIZABLE, false);
 
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Breakout", nullptr, nullptr);
+
+    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Fox Game", nullptr, nullptr);
     glfwMakeContextCurrent(window);
-    // 在创建窗口后启用垂直同步
-    glfwSwapInterval(1);
 
-    glewExperimental = GL_TRUE;
-    glewInit();
-    glGetError(); // Call it once to catch glewInit() bug, all other errors are now from our application.
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
 
     glfwSetKeyCallback(window, key_callback);
+//    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // OpenGL configuration
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -151,7 +164,7 @@ int main(int argc, char* argv[])
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // 初始化三角形
-    initTriangle();
+    //initTriangle();
 
     // Initialize game
     Breakout.Init();
@@ -183,7 +196,7 @@ int main(int argc, char* argv[])
         glClear(GL_COLOR_BUFFER_BIT);
 
         // 渲染三角形（测试用）
-        renderTriangle();
+        //renderTriangle();
 
         // 渲染游戏内容
         Breakout.Render();

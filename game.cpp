@@ -6,7 +6,13 @@
 ** Creative Commons, either version 4 of the License, or (at your
 ** option) any later version.
 ******************************************************************/
+#include <algorithm>
+#include <sstream>
+#include <iostream>
+
 #include "game.h"
+#include "funcs/resource_manager.h"
+#include "sprite.h"
 
 
 // Game-related State data
