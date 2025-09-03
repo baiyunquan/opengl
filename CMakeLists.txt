@@ -7,6 +7,11 @@ project(OpenGLTEST1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 设置统一的运行时库
+if(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 # 把需要拷贝的资源路径，保持在 thridParty 里面
 file(GLOB ASSETS "./shaders")
 
@@ -24,7 +29,7 @@ file(GLOB SRCS "*.cpp")
 message(STATUS "Source files: ${SRCS}")
 
 # 生成可执行文件
-add_executable(main game ${SRCS})
+add_executable(main ${SRCS})
 
 # 获取 funcs 目录下所有 glsl 文件
 file(GLOB SHADER_FILES "${CMAKE_SOURCE_DIR}/funcs/*.glsl")
@@ -54,9 +59,6 @@ target_include_directories(main PRIVATE
     ${LIB_DIR}/assimp/include
     ${LIB_DIR}/freetype/include
 )
-
-# 定义 GLEW_STATIC
-target_compile_definitions(main PRIVATE GLEW_STATIC)
 
 # 将 glad 的源文件添加到编译
 target_sources(main PRIVATE ${LIB_DIR}/glad/src/glad.c)
