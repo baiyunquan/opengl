@@ -20,7 +20,7 @@ set(LIB_DIR ${CMAKE_SOURCE_DIR}/libs)
 add_subdirectory(funcs)
 
 # 搜索所有cpp文件并加入到变量中
-file(GLOB SRCS "*.cpp")
+file(GLOB SRCS "*.cpp" , "*.h")
 message(STATUS "Source files: ${SRCS}")
 
 # 生成可执行文件

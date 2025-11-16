@@ -12,6 +12,7 @@
 #include "funcs/stb_image.h"
 //#include "opengl_intro.h"
 #include <camera.h>
+#include "cylinder.h"
 
 #include <iostream>
 
@@ -26,8 +27,8 @@ void processInput(GLFWwindow* window);
 void adjustLightProperty(float adjustment);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1248;
+const unsigned int SCR_HEIGHT = 832;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -49,9 +50,6 @@ glm::vec3 lightSpecular = { 1.0f, 1.0f, 1.0f }; // 保持不变（已经是最�
 
 int main()
 {
-    lightMaterial();
-    return 1;
-
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -98,6 +96,7 @@ int main()
     Shader lightingShader("shaders/light/vertShader.glsl", "shaders/multiple_light/fragShader.glsl");
     Shader lightCubeShader("shaders/light/defaultVertShader.glsl", "shaders/light/lightShader.glsl");
     Shader groundShader("shaders/ground/groundVert.glsl", "shaders/ground/groundFrag.glsl");
+    Shader lightMaterialShader("shaders/lightMaterial/vert.glsl", "shaders/lightMaterial/frag.glsl");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -222,6 +221,7 @@ int main()
     lightingShader.setInt("material.diffuse", 0);
     lightingShader.setInt("material.specular", 1);
 
+    // add ground
     unsigned int groundVAO, groundVBO;
     glGenVertexArrays(1, &groundVAO);
     glGenBuffers(1, &groundVBO);
@@ -231,7 +231,33 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glm::mat4 groundModel = glm::mat4(1.0f);
+    // add cylinder side
+    std::vector<float> up{};
+    std::vector<float> down{};
+    std::vector<float> side{};
+    Cylinder::createCircleWireVertices(1000, 1.0f, up, true);
+    Cylinder::createCircleWireVertices(1000, 0.0f, down, false);
+    Cylinder::createCylinderSideFewSector(1000, up, down, side);
+
+    unsigned int cylinderVBO, cylinderVAO;
+    glGenVertexArrays(1, &cylinderVAO);
+    glGenBuffers(1, &cylinderVBO);
+
+    glBindVertexArray(cylinderVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, cylinderVBO);
+    glBufferData(GL_ARRAY_BUFFER, side.size() * sizeof(float), side.data(), GL_STATIC_DRAW);
+
+    // position attribute (location = 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // normal attribute (location = 1)
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0); // unbind
+
+    glm::mat4 standardModel = glm::mat4(1.0f);
 
     // render loop
     // -----------
@@ -249,7 +275,7 @@ int main()
 
         // render
         // ------
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // be sure to activate shader when setting uniforms/drawing objects
@@ -344,7 +370,7 @@ int main()
             glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
             lightingShader.setMat3("normalMatrix", normalMatrix);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            //glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
         // also draw the lamp object(s)
@@ -369,8 +395,38 @@ int main()
         groundShader.setMat4("projection", projection);
         groundShader.setMat4("view", view);
         groundShader.setFloat("tileSize", step);
-        groundShader.setMat4("model", groundModel);
-        glDrawArrays(GL_TRIANGLES, 0, groundVertices.size() / 3);
+        groundShader.setMat4("model", standardModel);
+        //glDrawArrays(GL_TRIANGLES, 0, groundVertices.size() / 3);
+
+        // be sure to activate shader when setting uniforms/drawing objects
+        lightMaterialShader.use();
+        lightMaterialShader.setVec3("light.position", lightPos);
+        lightMaterialShader.setVec3("viewPos", camera.Position);
+
+        // Light properties: make light stronger
+        glm::vec3 lightColor;
+        lightColor.x = static_cast<float>(sin(glfwGetTime() * 2.0));
+        lightColor.y = static_cast<float>(sin(glfwGetTime() * 0.7));
+        lightColor.z = static_cast<float>(sin(glfwGetTime() * 1.3));
+
+        glm::vec3 diffuseColor = lightColor * glm::vec3(1.0f);   // ← 原来是 0.5f
+        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.4f); // ← 原来是 0.2f
+
+        lightMaterialShader.setVec3("light.ambient", ambientColor);
+        lightMaterialShader.setVec3("light.diffuse", diffuseColor);
+        lightMaterialShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // Material properties: make it reflect more light
+        lightMaterialShader.setVec3("material.ambient", 0.8f, 0.8f, 0.8f);
+        lightMaterialShader.setVec3("material.diffuse", 1.0f, 1.0f, 1.0f); 
+        lightMaterialShader.setVec3("material.specular", 0.8f, 0.8f, 0.8f); 
+        lightMaterialShader.setFloat("material.shininess", 64.0f);
+
+        lightMaterialShader.setMat4("projection", projection);
+        lightMaterialShader.setMat4("view", view);
+        lightMaterialShader.setMat4("model", standardModel);
+        glBindVertexArray(cylinderVAO);
+        glDrawArrays(GL_TRIANGLES, 0, side.size() / 6);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
