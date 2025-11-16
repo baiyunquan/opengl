@@ -97,6 +97,8 @@ int main()
     Shader lightCubeShader("shaders/light/defaultVertShader.glsl", "shaders/light/lightShader.glsl");
     Shader groundShader("shaders/ground/groundVert.glsl", "shaders/ground/groundFrag.glsl");
     Shader lightMaterialShader("shaders/lightMaterial/vert.glsl", "shaders/lightMaterial/frag.glsl");
+    Shader diskShader("shaders/cylinder/diskVert.glsl", "shaders/lightMaterial/frag.glsl");
+    Shader sideShader("shaders/cylinder/cylinderSideVert.glsl", "shaders/lightMaterial/frag.glsl");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -232,9 +234,7 @@ int main()
     glEnableVertexAttribArray(0);
 
     // add cylinder side
-    std::vector<float> up{};
-    std::vector<float> down{};
-    std::vector<float> side{};
+    std::vector<float> up{} , down{} , side{};
     Cylinder::createCircleWireVertices(1000, 1.0f, up, true);
     Cylinder::createCircleWireVertices(1000, 0.0f, down, false);
     Cylinder::createCylinderSideFewSector(1000, up, down, side);
@@ -257,7 +257,31 @@ int main()
 
     glBindVertexArray(0); // unbind
 
-    glm::mat4 standardModel = glm::mat4(1.0f);
+    std::vector<float> rimVBO{}, sideVBO{};
+    Cylinder::generateCylinder(1000, rimVBO, sideVBO);
+
+    // 添加 rim 和 side 的 VAO 和 VBO
+    unsigned int rimVAO, rimVBO_ID, sideVAO, sideVBO_ID;
+    glGenVertexArrays(1, &rimVAO);
+    glGenBuffers(1, &rimVBO_ID);
+    glGenVertexArrays(1, &sideVAO);
+    glGenBuffers(1, &sideVBO_ID);
+
+    // 配置 rim 的 VAO 和 VBO
+    glBindVertexArray(rimVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, rimVBO_ID);
+    glBufferData(GL_ARRAY_BUFFER, rimVBO.size() * sizeof(float), rimVBO.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // 配置 side 的 VAO 和 VBO
+    glBindVertexArray(sideVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, sideVBO_ID);
+    glBufferData(GL_ARRAY_BUFFER, sideVBO.size() * sizeof(float), sideVBO.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0); // 解绑 VAO
 
     // render loop
     // -----------
@@ -370,7 +394,7 @@ int main()
             glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
             lightingShader.setMat3("normalMatrix", normalMatrix);
 
-            //glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
         // also draw the lamp object(s)
@@ -390,13 +414,15 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
+        glm::mat4 cylinderModel = glm::mat4(1.0f);
+
         groundShader.use();
         glBindVertexArray(groundVAO);
         groundShader.setMat4("projection", projection);
         groundShader.setMat4("view", view);
         groundShader.setFloat("tileSize", step);
-        groundShader.setMat4("model", standardModel);
-        //glDrawArrays(GL_TRIANGLES, 0, groundVertices.size() / 3);
+        groundShader.setMat4("model", cylinderModel);
+        glDrawArrays(GL_TRIANGLES, 0, groundVertices.size() / 3);
 
         // be sure to activate shader when setting uniforms/drawing objects
         lightMaterialShader.use();
@@ -424,9 +450,51 @@ int main()
 
         lightMaterialShader.setMat4("projection", projection);
         lightMaterialShader.setMat4("view", view);
-        lightMaterialShader.setMat4("model", standardModel);
+        lightMaterialShader.setMat4("model", cylinderModel);
         glBindVertexArray(cylinderVAO);
         glDrawArrays(GL_TRIANGLES, 0, side.size() / 6);
+        cylinderModel = glm::translate(cylinderModel, glm::vec3(3.0f, 3.0f, 3.0f));
+
+        diskShader.use();
+        diskShader.setVec3("light.ambient", ambientColor);
+        diskShader.setVec3("light.diffuse", diffuseColor);
+        diskShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // Material properties: make it reflect more light
+        diskShader.setVec3("material.ambient", 0.8f, 0.8f, 0.8f);
+        diskShader.setVec3("material.diffuse", 1.0f, 1.0f, 1.0f);
+        diskShader.setVec3("material.specular", 0.8f, 0.8f, 0.8f);
+        diskShader.setFloat("material.shininess", 64.0f);
+        diskShader.setMat4("projection", projection);
+        diskShader.setMat4("view", view);
+
+        diskShader.setMat4("model", cylinderModel);
+        diskShader.setFloat("normalSign", -1.0f); // 底部圆片
+        glBindVertexArray(rimVAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, rimVBO.size() / 3);
+
+        cylinderModel = glm::translate(cylinderModel, glm::vec3(0.0f, -1.0f ,0.0f)); // 向 z 轴正方向移动 1 个单位
+        diskShader.setMat4("model", cylinderModel);
+        diskShader.setFloat("normalSign", 1.0f); // 底部圆片
+        glBindVertexArray(rimVAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, rimVBO.size() / 3);
+
+        sideShader.use();
+        sideShader.setVec3("light.ambient", ambientColor);
+        sideShader.setVec3("light.diffuse", diffuseColor);
+        sideShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // Material properties: make it reflect more light
+        sideShader.setVec3("material.ambient", 0.8f, 0.8f, 0.8f);
+        sideShader.setVec3("material.diffuse", 1.0f, 1.0f, 1.0f);
+        sideShader.setVec3("material.specular", 0.8f, 0.8f, 0.8f);
+        sideShader.setFloat("material.shininess", 64.0f);
+
+        sideShader.setMat4("projection", projection);
+        sideShader.setMat4("view", view);
+        sideShader.setMat4("model", cylinderModel);
+        glBindVertexArray(sideVAO);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, sideVBO.size() / 3);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -439,6 +507,10 @@ int main()
     glDeleteVertexArrays(1, &cubeVAO);
     glDeleteVertexArrays(1, &lightCubeVAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &rimVAO);
+    glDeleteBuffers(1, &rimVBO_ID);
+    glDeleteVertexArrays(1, &sideVAO);
+    glDeleteBuffers(1, &sideVBO_ID);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------

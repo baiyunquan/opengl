@@ -21,21 +21,22 @@ void normalize(float v[3]) {
 /* using TRIANGLE_FAN and TRIANGLE_TRIPE mode */
 void Cylinder::generateCylinder(int sector, std::vector<float>& rim, std::vector<float>& side) {
     double offset = 2.0 * my_pi / sector;
+
+    rim.resize((sector + 2) * 3);
     // central point
     rim[0] = 0; rim[1] = 0; rim[2] = 0;
 
-    rim.resize((sector + 2) * 3);
     for (int i = 0; i <= sector; i++) {
         int j = i * 3 + 3;
-        rim[j] = cosf(offset * i); rim[j + 1] = sinf(offset * i); rim[j + 2] = 0;
+        rim[j] = cosf(offset * i); rim[j + 1] = 0.0f; rim[j + 2] = sinf(offset * i);
     }
 
     side.resize((sector + 1) * 2 * 3);
     for (int i = 0; i <= sector; i++) {
         int j = i * 3 + 3;
         int k = i * 6;
-        side[k] = rim[j]; side[k + 1] = rim[j + 1]; side[k + 2] = 0;
-        side[k + 3] = rim[j]; side[k + 4] = rim[j + 1]; side[k + 5] = 1;
+        side[k] = rim[j]; side[k + 1] = 0.0f; side[k + 2] = rim[j + 2];
+        side[k + 3] = rim[j]; side[k + 4] = 1.0f; side[k + 5] = rim[j + 2];
     }
 }
 

@@ -15,7 +15,7 @@ void main()
     FragPos = worldPos.xyz;
 
     // 圆片法线：始终垂直于平面
-    vec3 localNormal = vec3(0.0, 0.0, normalSign);
+    vec3 localNormal = vec3(0.0, normalSign, 0.0);
 
     // 变换法线（注意：平移不影响法线，但旋转/缩放需要 normalMatrix）
     mat3 normalMatrix = transpose(inverse(mat3(model)));
