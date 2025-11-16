@@ -17,6 +17,29 @@ void normalize(float v[3]) {
     }
 }
 
+
+/* using TRIANGLE_FAN and TRIANGLE_TRIPE mode */
+void Cylinder::generateCylinder(int sector, std::vector<float>& rim, std::vector<float>& side) {
+    double offset = 2.0 * my_pi / sector;
+    // central point
+    rim[0] = 0; rim[1] = 0; rim[2] = 0;
+
+    rim.resize((sector + 2) * 3);
+    for (int i = 0; i <= sector; i++) {
+        int j = i * 3 + 3;
+        rim[j] = cosf(offset * i); rim[j + 1] = sinf(offset * i); rim[j + 2] = 0;
+    }
+
+    side.resize((sector + 1) * 2 * 3);
+    for (int i = 0; i <= sector; i++) {
+        int j = i * 3 + 3;
+        int k = i * 6;
+        side[k] = rim[j]; side[k + 1] = rim[j + 1]; side[k + 2] = 0;
+        side[k + 3] = rim[j]; side[k + 4] = rim[j + 1]; side[k + 5] = 1;
+    }
+}
+
+
 void Cylinder::createCircleWireVertices(int sector, float z , std::vector<float>& target , bool vectical) {
     glm::vec3 vecticalVector(0, 0, (vectical ? 1 : -1));
     double offset = 2.0 * my_pi / sector;
@@ -112,8 +135,8 @@ void Cylinder::createCylinderSideFewSector(int sector,
         normalize(normal1);
         normalize(normal2);
 
-        std::cout << normal1[0]<< " " << normal1[1] << " " << normal1[2] << "\n";
-        std::cout << normal2[0] << " " << normal2[1] << " " << normal2[2] << "\n";
+        //std::cout << normal1[0]<< " " << normal1[1] << " " << normal1[2] << "\n";
+        //std::cout << normal2[0] << " " << normal2[1] << " " << normal2[2] << "\n";
 
         // Helper lambda to write vertex: pos + normal
         auto writeVertex = [&](int offset, const float pos[3], const float norm[3]) {
